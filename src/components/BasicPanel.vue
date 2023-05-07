@@ -1,6 +1,9 @@
 <!--suppress JSUnresolvedReference -->
 <template>
-  <div class="mt-4 bg-white border-gray-100 border-2 rounded-[30px] shadow-xl">
+  <div class="text-2xl ml-8 font-bold">
+    {{ currentStock }}
+  </div>
+  <div class="mt-2 ml-2 mr-2 bg-white border-gray-100 border-2 rounded-[30px] shadow-xl">
     <div ref="chartContainer">
     </div>
   </div>
@@ -19,7 +22,6 @@
             class="bg-gray-50 border-gray-700 w-1/2 max-h-96 mx-auto rounded-[20px] shadow-2xl p-6 overflow-y-auto custom-scrollbar"
           >
             <p class="font-bold text-2xl">Add Stock</p>
-            <form>
               <div class="relative py-2">
                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                   <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none"
@@ -34,7 +36,6 @@
                        @keyup.enter="searchStock($event.target.value)"
                 >
               </div>
-            </form>
             <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
               <tbody>
               <tr class="border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600"
@@ -69,7 +70,7 @@
           </div>
         </div>
       </div>
-      <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+      <div class="relative overflow-x-auto max-h-96 shadow-md sm:rounded-lg">
         <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
           <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
@@ -131,7 +132,7 @@
       </div>
     </div>
     <div class="px-5">
-      <h1 class="text-black font-medium text-xl py-2">Strategies</h1>
+      <h1 class="text-black font-medium text-xl p-1">Strategies Backtest</h1>
       <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
         <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
           <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
@@ -204,6 +205,7 @@ let chart
 let candleSeries
 
 const chartContainer = ref()
+const currentStock = ref()
 const stockMetadata = ref({})
 const resultList = ref([])
 const candleStickData = ref([])
@@ -258,9 +260,11 @@ onMounted(async () => {
     });
 
     chart.timeScale().applyOptions({
-        barSpacing: 5,
+        barSpacing: 2,
     })
     chart.timeScale().fitContent()
+
+    await showStockData('AAPL')
 })
 
 onUnmounted(() => {
@@ -277,18 +281,21 @@ const getStockData = async (stock) => {
 }
 
 const showStockData = async (symbol) => {
+    currentStock.value = symbol
     candleStickData.value = await getStockData(symbol)
-    candleStickData.value.reverse()
-    candleSeries.setData(candleStickData.value.reverse())
+    // candleStickData.value.reverse()
+    candleSeries.setData(candleStickData.value)
 }
 
 const addStock = () => {
     showStockAddPopup.value = true
+    document.body.classList.add('overflow-hidden')
 }
 
 const closeStockAddPopup = () => {
     showStockAddPopup.value = false
     resultList.value = []
+    document.body.classList.remove('overflow-hidden')
 }
 
 const searchStock = async (stock) => {
@@ -297,11 +304,12 @@ const searchStock = async (stock) => {
     // console.log(resultList.value)
 }
 
-const addSelectedStock = (stock) => {
+const addSelectedStock = async (stock) => {
     // console.log(stock)
     store.commit('updateStockList', [stock])
-    showStockData(stock)
-    displayMetaQuery()
+    await showStockData(stock)
+    await displayMetaQuery()
+    console.log(stockMetadata.value)
 }
 
 const deleteThisStock = (stock) => {
@@ -327,9 +335,5 @@ const displayMetaQuery = async () => {
     await Promise.all(requests);
     // console.log('Price change data:', stockMetadata.value);
 };
-
-const test = (value) => {
-    testList.value.push(value)
-}
 
 </script>
